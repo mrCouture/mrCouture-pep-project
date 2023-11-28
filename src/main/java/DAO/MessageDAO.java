@@ -83,6 +83,7 @@ public Message selectAllByMessageId(int message_id) throws Exception
 	);
 }
 
+
 /**
  * @return the number of rows deleted
  */
