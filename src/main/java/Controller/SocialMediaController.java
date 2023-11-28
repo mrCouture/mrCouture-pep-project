@@ -36,6 +36,7 @@ public Javalin startAPI() {
 	MessageService messageService=new MessageService(accountDAO,messageDAO);
 	AccountService accountService=new AccountService(accountDAO,messageDAO);
 
+	
 	app.get(	"example-endpoint", 	this::exampleHandler);
 	app.post(	"register",				accountService::endRegister);
 	app.post(	"login",				accountService::endLogin);
