@@ -12,7 +12,7 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 
 /**
- * TODO: You will need to write your own endpoints and handlers for your controller. The endpoints you will need can be
+ * You will need to write your own endpoints and handlers for your controller. The endpoints you will need can be
  * found in readme.md as well as the test cases. You should
  * refer to prior mini-project labs and lecture materials for guidance on how a controller may be built.
  */
@@ -26,6 +26,7 @@ public class SocialMediaController {
         Javalin app = Javalin.create();
         app.get("example-endpoint", this::exampleHandler);
 		app.post("register",this::endRegister);
+		app.post("login",this::endLogin);
         return app;
     }
 
@@ -90,5 +91,25 @@ public class SocialMediaController {
 		System.err.println("newAccount="+newAccount);
 
 		ctx.json(newAccount);
+	}
+
+	private void endLogin(Context ctx) throws Exception
+	{
+		Account incoming=ctx.bodyAsClass(Account.class);
+
+		//Find an existing account given username and password
+		Connection conn1=ConnectionUtil.getConnection();
+		PreparedStatement ps1=conn1.prepareStatement("select*from account where username=? and password=?");
+		ps1.setString(1, incoming.getUsername());
+		ps1.setString(2, incoming.getPassword());
+		ResultSet rs1=ps1.executeQuery();
+		if(!rs1.next())
+		{ctx.status(401);return;}
+
+		Account existingAccount=new Account();
+		existingAccount.setAccount_id(rs1.getInt("account_id"));
+		existingAccount.setUsername(rs1.getString("username"));
+		existingAccount.setPassword(rs1.getString("password"));
+		ctx.json(existingAccount);
 	}
 }
