@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import Model.Account;
+import Model.Message;
 import Util.ConnectionUtil;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -25,8 +26,9 @@ public class SocialMediaController {
     public Javalin startAPI() {
         Javalin app = Javalin.create();
         app.get("example-endpoint", this::exampleHandler);
-		app.post("register",this::endRegister);
-		app.post("login",this::endLogin);
+		app.post("register",		this::endRegister);
+		app.post("login",			this::endLogin);
+		app.post("messages",		this::endMessages);
         return app;
     }
 
@@ -112,4 +114,49 @@ public class SocialMediaController {
 		existingAccount.setPassword(rs1.getString("password"));
 		ctx.json(existingAccount);
 	}
+
+	private void endMessages(Context ctx) throws Exception
+	{
+		Message incoming=ctx.bodyAsClass(Message.class);
+
+		if(incoming==null)
+		{ctx.status(400);return;}
+		if(incoming.getMessage_text()==null)
+		{ctx.status(400);return;}
+		if(incoming.getMessage_text().isBlank())
+		{ctx.status(400);return;}
+		if(incoming.getMessage_text().length()>=255)
+		{ctx.status(400);return;}
+
+		//Check that posted_by matches an existing user
+		Connection conn1=ConnectionUtil.getConnection();
+		PreparedStatement ps1=conn1.prepareStatement("select*from account where account_id=?");
+		ps1.setInt(1, incoming.getPosted_by());
+		ResultSet rs1=ps1.executeQuery();
+		if(!rs1.next())
+		{ctx.status(400);return;}//no rows given posted_by account_id
+
+		//Save the message to the database
+		Connection conn2=ConnectionUtil.getConnection();
+		PreparedStatement ps2=conn2.prepareStatement(
+		"insert into message (posted_by,message_text,time_posted_epoch) values (?,?,?)",Statement.RETURN_GENERATED_KEYS);
+		ps2.setInt(		1, incoming.getPosted_by());
+		ps2.setString(	2, incoming.getMessage_text());
+		ps2.setLong(	3, incoming.getTime_posted_epoch());
+		if(ps2.executeUpdate()==0)
+		{ctx.status(500);return;}//could not save message for some reason
+
+		//Get message id from the newly created row
+		ResultSet rs2=ps2.getGeneratedKeys();
+		if(!rs2.next())
+		{ctx.status(500);return;}//could not get newly created row id
+
+		int newMessageId=(int)rs2.getLong("message_id");//defined as int in the table
+		System.out.println("rs2="+rs2);
+		System.out.println("newMessageId="+newMessageId);
+
+		incoming.setMessage_id(newMessageId);
+		ctx.json(incoming);
+	}
+
 }
