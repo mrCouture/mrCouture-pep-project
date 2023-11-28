@@ -30,14 +30,15 @@ MessageDAO messageDAO=new MessageDAO();
  */
 public Javalin startAPI() {
 	Javalin app = Javalin.create();
-	app.get("example-endpoint", this::exampleHandler);
-	app.post("register",		this::endRegister);
-	app.post("login",			this::endLogin);
+	app.get(	"example-endpoint", 	this::exampleHandler);
+	app.post(	"register",				this::endRegister);
+	app.post(	"login",				this::endLogin);
 	app.post(	"messages",				this::endMessagesPOST);
 	app.get(	"messages",				this::endMessagesGET_ALL);
 	app.get(	"messages/{message_id}",this::endMessageGET_BY_ID);
 	app.delete(	"messages/{message_id}",this::endMessageDELETE_BY_ID);
 	app.patch(	"messages/{message_id}",this::endMessagePATCH_BY_ID);
+	app.get(	"accounts/{account_id}/messages",this::endAccounts);
 	return app;
 }
 
@@ -247,5 +248,18 @@ private void endMessagePATCH_BY_ID(Context ctx) throws Exception
 
 	ctx.json(updatedMessage);
 }
+
+public void endAccounts(Context ctx) throws Exception
+{
+	if(ctx.pathParam("account_id")==null)
+	{ctx.status(400);return;}
+	if(ctx.pathParam("account_id").isBlank())
+	{ctx.status(400);return;}
+	int searchAccountId=Integer.parseInt(ctx.pathParam("account_id"));
+
+	//select messages posted by this account_id
+	ctx.json(messageDAO.selectAllByPostedBy(searchAccountId));
+}
+
 
 }//end class

@@ -3,6 +3,8 @@ package DAO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import Model.Message;
 import Util.ConnectionUtil;
@@ -50,6 +52,30 @@ public int updateMessageTextByMessageId(String messageText,int messageId) throws
 	ps.setString(1,messageText);
 	ps.setInt(2,messageId);
 	return ps.executeUpdate();
+}
+
+/**
+ * @returns The messages assoicated with the given account_id
+ */
+public List<Message> selectAllByPostedBy(int postedBy) throws Exception
+{
+	Connection conn=ConnectionUtil.getConnection();
+	PreparedStatement ps=conn.prepareStatement("select*from message where posted_by=?");
+	ps.setInt(1, postedBy);
+	ResultSet rs=ps.executeQuery();
+
+	List<Message> messages=new ArrayList<>();
+
+	while(rs.next()){
+		messages.add(new Message(
+			rs.getInt("message_id"),
+			rs.getInt("posted_by"),
+			rs.getString("message_text"),
+			rs.getLong("time_posted_epoch")
+		));
+	}
+
+	return messages;
 }
 
 }//end class
